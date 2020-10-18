@@ -1,0 +1,95 @@
+# Random
+## zoo
+Total mutants: 15
+Total models: 4
+
+Mutation score = 0.00
+
+Mutant		Killed	Total	%
+  RemoveEnclosingConditiona =	0	4	0.00
+  DeleteRule =	0	2	0.00
+  RestrictRuleFilterMutator =	0	2	0.00
+  AddNavigationAfterOptiona =	0	5	0.00
+  RemoveBindingOfCompulsory =	0	2	0.00
+
+## mottu
+Total mutants: 55
+Total models: 4
+
+Mutation score = 0.00
+
+Mutant		Killed	Total	%
+  CCCR =	0	4	0.00
+  RSMA =	0	20	0.00
+  RSCC =	0	27	0.00
+  CFCD =	0	2	0.00
+  CFCP =	0	2	0.00
+
+## wimmer
+Total mutants: 34
+Total models: 4
+
+Mutation score = 0.00
+
+Mutant		Killed	Total	%
+  InPatternElementClassChan =	0	2	0.00
+  OutPatternElementAddition =	0	6	0.00
+  BindingDeletion =	0	2	0.00
+  InPatternElementNameChang =	0	2	0.00
+  FilterConditionChange =	0	2	0.00
+  OutPatternElementClassCha =	0	2	0.00
+  InPatternElementAddition =	0	4	0.00
+  MatchedRuleNameChange =	0	2	0.00
+  BindingValueChange =	0	2	0.00
+  MatchedRuleDeletion =	0	2	0.00
+  FilterDeletion =	0	2	0.00
+  MatchedRuleAddition =	0	4	0.00
+  OutPatternElementNameChan =	0	2	0.00
+
+  # ACO
+## zoo
+Total mutants: 15
+Total models: 4
+
+Mutation score = 93.33
+
+Mutant		Killed	Total	%
+  RemoveEnclosingConditiona =	4	4	100.00
+  DeleteRule =	2	2	100.00
+  RestrictRuleFilterMutator =	2	2	100.00
+  AddNavigationAfterOptiona =	4	5	80.00
+  RemoveBindingOfCompulsory =	2	2	100.00
+
+## mottu
+Total mutants: 55
+Total models: 4
+
+Mutation score = 98.18
+
+Mutant		Killed	Total	%
+  CCCR =	3	4	75.00
+  RSMA =	20	20	100.00
+  RSCC =	27	27	100.00
+  CFCD =	2	2	100.00
+  CFCP =	2	2	100.00
+
+## wimmer
+Total mutants: 34
+Total models: 4
+
+Mutation score = 73.53
+
+Mutant		Killed	Total	%
+  InPatternElementClassChan =	2	2	100.00
+  OutPatternElementAddition =	6	6	100.00
+  BindingDeletion =	1	2	50.00
+  InPatternElementNameChang =	0	2	0.00
+  FilterConditionChange =	2	2	100.00
+  OutPatternElementClassCha =	2	2	100.00
+  InPatternElementAddition =	2	4	50.00
+  MatchedRuleNameChange =	0	2	0.00
+  BindingValueChange =	2	2	100.00
+  MatchedRuleDeletion =	2	2	100.00
+  FilterDeletion =	2	2	100.00
+  MatchedRuleAddition =	4	4	100.00
+  OutPatternElementNameChan =	0	2	0.00
