@@ -1,0 +1,107 @@
+#ACO
+
+## zoo
+Total mutants: 38
+Total models: 15
+
+Mutation score = 80.56
+
+Mutant		Killed	Total	%
+  DeleteRule =	5	6	83.83
+  RestrictRuleFilterMutator =	18	21	85.71
+  RemoveBindingOfCompulsory =	8	11	72.72
+
+
+## mutto
+Total mutants: 92
+Total models: 15
+
+Mutation score = 68.13
+
+Mutant		Killed	Total	%
+  CACD =	8	11	72.72
+  CCCR =	3	6	50.00
+  RSMA =	24	26	92.30
+  RSCC =	3	8	37.50
+  CFCD =	4	4	100.00
+  ROCC =	10	16	62.50
+  CFCP =	13	21	61.90
+
+## wimmer
+Total mutants: 355
+Total models: 15
+
+Mutation score = 40.02
+
+Mutant		Killed	Total	%
+  InPatternElementClassChan =	39	72	54.16
+  OutPatternElementAddition =	23	42	54.76
+  BindingDeletion =	12	16	75.00
+  InPatternElementNameChang =	5	12	41.66
+  FilterConditionChange =	6	10	60.00
+  OutPatternElementClassCha =	19	30	63.33
+  FilterAddition =	0	2	0.00
+  InPatternElementAddition =	11	42	26.19
+  MatchedRuleNameChange =	4	6	66.66
+  BindingFeatureChange =	0	44	0.00
+  BindingValueChange =	12	16	75.00
+  MatchedRuleDeletion =	2	6	33.33
+  FilterDeletion =	1	4	25.00
+  BindingAddition =	1	5	20.00
+  MatchedRuleAddition =	19	42	45.23
+  OutPatternElementNameChan =	0	6	0.00
+
+# Random
+
+## zoo
+
+Total mutants: 38
+Total models: 15
+
+Mutation score = 75.97
+
+Mutant		Killed	Total	%
+  DeleteRule =	5	6	83.33
+  RestrictRuleFilterMutator =	17	21	80.95
+  RemoveBindingOfCompulsory =	7	11	63.63
+
+
+## mutto
+Total mutants: 92
+Total models: 15
+
+Mutation score = 54.18
+
+Mutant		Killed	Total	%
+  CACD =	5	11	45.45
+  CCCR =	3	6	50.00
+  RSMA =	18	26	69.23
+  RSCC =	4	8	50.00
+  CFCD =	3	4	75.00
+  ROCC =	9	16	56.25
+  CFCP =	7	21	33.33
+
+
+## wimmer
+Total mutants: 355
+Total models: 15
+
+Mutation score = 33.28
+
+Mutant		Killed	Total	%
+  InPatternElementClassChan =	39	72	54.16
+  OutPatternElementAddition =	23	42	54.76
+  BindingDeletion =	12	16	75.00
+  InPatternElementNameChang =	3	12	25.00
+  FilterConditionChange =	2	10	20.00
+  OutPatternElementClassCha =	11	30	36.66
+  FilterAddition =	0	2	0.00
+  InPatternElementAddition =	11	42	26.19
+  MatchedRuleNameChange =	4	6	66.66
+  BindingFeatureChange =	0	44	0.00
+  BindingValueChange =	10	16	62.50
+  MatchedRuleDeletion =	2	6	33.33
+  FilterDeletion =	1	4	25.00
+  BindingAddition =	1	5	20.00
+  MatchedRuleAddition =	14	42	33.33
+  OutPatternElementNameChan =	0	6	0.00
