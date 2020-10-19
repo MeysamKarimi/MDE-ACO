@@ -1,7 +1,7 @@
 # MDE-ACO
 Source code and the Mutation Analysis for the ACO Approach for Test Case Generation 
 
-## Implementation of the Mutation Analysis for the ACO Approach for Test Case Generation
+## Source code and the Mutation Analysis for the ACO Approach for Test Case Generation 
 
 This project supports and verifies the mutation analysis performed in [1]. It has been developed with Eclipse Modeling Tools, version IDE 2020-06 (4.16.0). MDE Testing Framework [2], anATLyzer [3] and ATL plugin are needed. There is a project named Mutation_Analysis.
 
