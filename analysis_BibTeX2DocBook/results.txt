@@ -1,0 +1,51 @@
+# ACO
+## zoo
+Total mutants: 135
+Total models: 15
+
+Mutation score = 100.00
+
+Mutant		Killed	Total	%
+  ReplaceHelperCallParamete =	29	29	100.00
+  DeleteRule =	9	9	100.00
+  RestrictRuleFilterMutator =	64	64	100.00
+  ReplaceFeatureAccessBySub =	8	8	100.00
+  RemoveBindingOfCompulsory =	25	25	100.00
+  
+## mutto
+Total mutants: 95
+Total models: 15
+
+Mutation score = 100.00
+
+Mutant		Killed	Total	%
+  CACD =	7	7	100.00
+  CCCR =	16	16	100.00
+  CFCD =	8	8	100.00
+  CFCP =	64	64	100.00
+  
+# Random
+## zoo
+Total mutants: 135
+Total models: 15
+
+Mutation score = 97.09
+
+Mutant		Killed	Total	%
+  ReplaceHelperCallParamete =	28	29	96.55
+  DeleteRule =	8	9	88.88
+  RestrictRuleFilterMutator =	64	64	100.00
+  ReplaceFeatureAccessBySub =	8	8	100.00
+  RemoveBindingOfCompulsory =	25	25	100.00
+  
+## mottu
+Total mutants: 95
+Total models: 15
+
+Mutation score = 100.00
+
+Mutant		Killed	Total	%
+  CACD =	7	7	100.00
+  CCCR =	16	16	100.00
+  CFCD =	8	8	100.00
+  CFCP =	64	64	100.00
