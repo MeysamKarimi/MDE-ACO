@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 
 import org.eclipse.emf.ecore.*;
 import org.eclipse.emf.ecore.resource.Resource;
-
+import org.eclipse.emf.common.util.Diagnostic;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
@@ -26,8 +27,10 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.impl.EDataTypeImpl;
+import org.eclipse.emf.ecore.util.Diagnostician;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.ocl.ParserException;
+import org.eclipse.ocl.Query;
 import org.eclipse.ocl.ecore.Constraint;
 import org.eclipse.ocl.ecore.EcoreEnvironmentFactory;
 import org.eclipse.ocl.ecore.OCL;
@@ -56,6 +59,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
+import com.ibm.icu.util.GregorianCalendar;
 
 //import fr.obeo.emf.specimen.internal.EPackagesData;
 
@@ -67,6 +71,7 @@ public class Ant {
 
 	Resource model;
 	Resource metaModel;
+	int shannon_i;
 	double fitnessValue;
 	int numberOfMetaModelElements;
 	int numberOfUserNeedElements;
@@ -95,6 +100,10 @@ public class Ant {
 			models = new HashSet<Resource>();
 		this.model = model;
 		models.add(model);
+	}
+
+	public Set<Resource> getModels() {
+		return models;
 	}
 
 	public Resource getMetaModel() {
@@ -169,9 +178,10 @@ public class Ant {
 	Range valuesRange = new Range(Math.round(DEFAULT_AVERAGE_VALUES_LENGTH * (1 - DEFAULT_VALUES_DEVIATION)),
 			Math.round(DEFAULT_AVERAGE_VALUES_LENGTH * (1 + DEFAULT_VALUES_DEVIATION)));
 
-	double[] probabilityArray = null;
+	HashMap<String, HashMap<String, Double>> probabilityArray = null;
 
-	public void generate(Resource resource, double[] P, int nModels, int nElements) {
+	public Resource generate(Resource resource, HashMap<String, HashMap<String, Double>> P, int nModels,
+			int nElements) {
 
 		Problem problemInstance = null;
 		try {
@@ -204,97 +214,100 @@ public class Ant {
 		currentObjects = 0;
 
 		// for (int i = 0; i < getNumberOfUserNeedModels(); i++) {
-		for (int i = getNumberOfUserNeedModels() - 1; i < getNumberOfUserNeedModels(); i++) {
-			// loop for creating root elements
-			// while (currentObjects < goalObjects) {
-			while (true) {
-				EClass eClass = getNextRootEClass(possibleRootEClasses);
-				IntegerDistribution dist = getDepthDistributionFor(eClass);
-				if (dist == null)
-					continue;
-				// currentMaxDepth = dist.sample();
-				// currentMaxDepth = numberOfUserNeedElements;
-				currentMaxDepth = 20;
-				if (currentMaxDepth == 0)
-					currentMaxDepth++;
-				Optional<EObject> generateEObject = generateEObject(eClass, indexByKind);
-				System.out.println("main body " + Thread.currentThread().getName() + " "+ Thread.activeCount() + " " + currentModelPartition);
-				modelPartitions.add(currentModelPartition);
-				if (generateEObject.isPresent()) {					
-					// check OCL for test
-//				OCL ocl = OCL.newInstance(EcoreEnvironmentFactory.INSTANCE);
-//				// create an OCL helper object
-//				OCLHelper<EClassifier, EOperation, EStructuralFeature, Constraint> helper =
-//						ocl.createOCLHelper();
-//
-//				// set the OCL context classifier
-//				helper.setContext(eClass);
-//
-//				try {
-//					Constraint invariant = helper.createInvariant(
-//					    "books->forAll(b1, b2 | b1 <> b2 implies b1.title <> b2.title)");
-//					OCLExpression<EClassifier> query = helper.createQuery(
-//				    "books->collect(b : Book | b.category)->asSet()");
-//				} catch (ParserException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//				   
-//
-//				//ta inja OCL
-//					
-					resource.getContents().add(generateEObject.get());
-				}
-				break;
+		// for (int i = getNumberOfUserNeedModels() - 1; i <
+		// getNumberOfUserNeedModels(); i++)
+		// {
+		// loop for creating root elements
+		// while (currentObjects < goalObjects) {
+		while (resource.getContents().size() < numberOfUserNeedElements) {
+			EClass eClass = getNextRootEClass(possibleRootEClasses);
+			IntegerDistribution dist = getDepthDistributionFor(eClass);
+			if (dist == null)
+				continue;
+			// currentMaxDepth = dist.sample();
+			currentMaxDepth = numberOfUserNeedElements / 2;
+			// currentMaxDepth = 20;
+			if (currentMaxDepth == 0)
+				currentMaxDepth++;
+			Optional<EObject> generateEObject = generateEObject(eClass, indexByKind);
+			System.out.println("main body " + Thread.currentThread().getName() + " " + Thread.activeCount() + " "
+					+ currentModelPartition);
+			modelPartitions.add(currentModelPartition);
+			if (generateEObject.isPresent()) {
+				resource.getContents().add(generateEObject.get());
+				// TODO here we need to check if the model is valid
+				// TODO if the model is valid after this addition, good go on, just break the
+				// while
+				// TODO otherwise, we need to remove the recently added EObject
+				// (generateEObject)
+				// and not allowing to breaking the loop, and we need to continue the loop
+				// instead
+				// till we could get a valid model
 			}
+			//break;
+		}
 
-			// LOGGER.info("Generating cross-references");
-			// System.out.println("Generating cross-references");
+		// LOGGER.info("Generating cross-references");
+		// System.out.println("Generating cross-references");
 
-			int totalEObjects = currentObjects;
-			int currentEObject = 0;
-			TreeIterator<EObject> eAllContents = resource.getAllContents();
-			while (eAllContents.hasNext() && currentEObject < numberOfUserNeedModels) {
-				currentEObject++;
-				// LOGGER.fine(MessageFormat.format("Generating cross references {0} / {1}",
-				// currentEObject, totalEObjects));
-				// System.out.println(MessageFormat.format("Generating cross references {0} /
-				// {1}", currentEObject, totalEObjects));
-				EObject eObject = eAllContents.next();
-				generateCrossReferences(eObject, indexByKind);
-			}
+		int totalEObjects = currentObjects;
+		int currentEObject = 0;
+		TreeIterator<EObject> eAllContents = resource.getAllContents();
+		final List<EObject> VisitedReferences = new ArrayList<EObject>();
+
+		while (eAllContents.hasNext() && currentEObject < nElements) {
+			currentEObject++;
+			// LOGGER.fine(MessageFormat.format("Generating cross references {0} / {1}",
+			// currentEObject, totalEObjects));
+			// System.out.println(MessageFormat.format("Generating cross references {0} /
+			// {1}", currentEObject, totalEObjects));
+			EObject eObject = eAllContents.next();
+			generateCrossReferences(eObject, indexByKind, VisitedReferences);
+		}
 
 //		LOGGER.info(MessageFormat.format("Requested #EObject={0}", goalObjects));
-
 //		LOGGER.info(MessageFormat.format("Actual #EObject={0}", ImmutableSet.copyOf(indexByKind.values()).size()));
 
-			for (Map.Entry<EClass, Collection<EObject>> entry : indexByKind.asMap().entrySet()) {
-				// Log number of elements for resolved EClasses
-				EClass eClass = entry.getKey();
-				if (!eClass.eIsProxy() || (eClass.eIsProxy() && EcoreUtil.resolve(eClass, resource) != eClass)) {
+		for (Map.Entry<EClass, Collection<EObject>> entry : indexByKind.asMap().entrySet()) {
+			// Log number of elements for resolved EClasses
+			EClass eClass = entry.getKey();
+			if (!eClass.eIsProxy() || (eClass.eIsProxy() && EcoreUtil.resolve(eClass, resource) != eClass)) {
 //				LOGGER.info(MessageFormat.format("#{0}::{1}={2}", 
 //						eClass.getEPackage().getNsURI(),
 //						eClass.getName(),
 //						entry.getValue().size()));
-				}
 			}
-			for (Map.Entry<EClass, Collection<EObject>> entry : indexByKind.asMap().entrySet()) {
-				EClass eClass = entry.getKey();
-				if (eClass.eIsProxy() && EcoreUtil.resolve(eClass, resource) == eClass) {
-					// Warn about unresolved EClasses
+		}
+		for (Map.Entry<EClass, Collection<EObject>> entry : indexByKind.asMap().entrySet()) {
+			EClass eClass = entry.getKey();
+			if (eClass.eIsProxy() && EcoreUtil.resolve(eClass, resource) == eClass) {
+				// Warn about unresolved EClasses
 //				LOGGER.warning(MessageFormat.format("#{0} (unresolved)={1}", 
 //						EcoreUtil.getURI(eClass),
 //						entry.getValue().size()));
-				}
-			}
-
-//		LOGGER.info(MessageFormat.format("Generation finished for resource ''{0}''", resource.getURI()));		
-			if (resource.isModified()) {
-				// resource.save(Collections.emptyMap());
-				this.setModel(resource);
-				// this.setFitnessValue(FitnessFunction());
 			}
 		}
+
+//		LOGGER.info(MessageFormat.format("Generation finished for resource ''{0}''", resource.getURI()));			
+		try {
+			EObject root = resource.getContents().get(0);
+			Diagnostic ress = Diagnostician.INSTANCE.validate(root);
+			int gg = ress.getSeverity();
+			if (ress.getSeverity() != Diagnostic.OK) {
+				String ss = ress.getMessage();
+				List dd = ress.getData();
+				int yy = 0;
+			}
+		} catch (Exception ex) {
+			int cc = 0;
+		}
+		if (resource.isModified()) {
+			// resource.save(Collections.emptyMap());
+			this.setModel(resource);
+			// this.setFitnessValue(FitnessFunction());
+		}
+		// }
+		return resource;
 
 	}
 
@@ -304,29 +317,154 @@ public class Ant {
 		// metamodel exists in this.metaModel
 		int z = 0;
 		z += CalculateMetamodelCoverage();
-		z += CalulateObjective2();
+		z += CalulateDissimilarity();
+		z += ShannonIndex();
 		return z;
+	}
+
+	private double ShannonIndex() {
+		// Sigma[i=1..9](Sigma((n(i)/N).lg(n(i)/N))
+		// N is the total number of nodes in the given set <-> ok
+		// i ranges over the 9 non-abstract node types in the GraphML meta-model, <->
+		// Shannon_i
+		// n(i) is the number of nodes of that type in the given set.
+
+		// ImmutableSet<EClass> n = new ImmutableSet<EClass>();
+		// List<EClass> n = new LinkedList<EClass>();
+		HashMap<EClass, Integer> n = new HashMap<EClass, Integer>();
+
+		// int i = n.size();
+		// i ranges over the (9) non-abstract node types in the meta-model, <->
+		// Shannon_i
+		if (shannon_i == 0) {
+			// int i = 0;
+			for (Iterator<EObject> it = this.metaModel.getAllContents(); it.hasNext();) {
+				EObject eObject = (EObject) it.next();
+				if (eObject instanceof EClass) {
+					EClass eClass = (EClass) eObject;
+					if (!eClass.isAbstract() && !eClass.isInterface()) {
+						// i++;
+						if (n.containsKey(eClass)) {
+							// n.replace(eClass, n.get(eClass) + 1);
+						} else {
+							n.put(eClass, 0);
+						}
+
+						// if(n.get(eClass))
+						// n.add(eClass);
+					}
+				}
+			}
+			shannon_i = n.size(); // i;
+		}
+
+//		int[] ni = new int[shannon_i]; //n(i)
+//		for (int j = 0; j < ni.length; j++) {
+//			ni[j] = 0;
+//		}
+
+		// N is the total number of nodes in the given set <-> ok
+		int N = 0;
+		for (Resource resource : models) {
+			int k = 0;
+			for (Iterator<EObject> it = resource.getAllContents(); it.hasNext();) {
+				EObject eObject = (EObject) it.next();
+				if (eObject instanceof EClass) {
+					EClass eClass = (EClass) eObject;
+					if (!eClass.isAbstract() && !eClass.isInterface()) {
+						N++;
+
+						for (EClass ec : n.keySet()) {
+							if (ec.getName().equals(eClass.getName())) {
+								n.replace(ec, n.get(ec) + 1);
+							}
+						}
+					}
+				}
+			}
+
+//			for (Iterator<EObject> it = this.metaModel.getAllContents(); it.hasNext();) {
+//				EObject eObject = (EObject) it.next();
+//				if (eObject instanceof EClass) {
+//					EClass eClass = (EClass) eObject;
+//					if (!eClass.isAbstract() && !eClass.isInterface()) {
+//						
+//					}
+//				}
+//			}
+
+//			for (Iterator<EObject> it = resource.getAllContents(); it.hasNext();) {
+//				EObject eObject = (EObject) it.next();
+//				if (eObject instanceof EClass) {
+//					EClass eClass = (EClass) eObject;
+//					if (!eClass.isAbstract() && !eClass.isInterface()) {
+//						N++;
+//						
+//						for (Iterator<EObject> itMM = this.metaModel.getAllContents(); itMM.hasNext();) {
+//							EObject eObjectI = (EObject) itMM.next();
+//							if(eObjectI.getClass().getTypeName() == eObject.getClass().getTypeName())
+//								ni[k]++;
+//						}						
+//					}					
+//				}
+//				k++;
+//			}
+		}
+
+		// Sigma[i=1..9](n(i)/N.lg(n(i)/N))
+		double shannonIndex = 0;
+//		for (int j = 0; j < ni.length; j++) {
+//			shannonIndex += (ni[j]/N) *  (int)(Math.log(ni[j]/N) / Math.log(2));
+//		}
+		for (EClass ec : n.keySet()) {
+			shannonIndex += (n.get(ec) / (double) N) * (double) (Math.log(n.get(ec) / (double) N) / Math.log(2));
+		}
+		return Math.abs(shannonIndex);
 	}
 
 	private int CalculateMetamodelCoverage() {
 		int mmCoverage = 0;
-
-		if (IsAnyPartitionConstraintsIsDefined()) // TODO Check if any constraint is defined in attributes/references
-		{
-
-		} else {
-			mmCoverage = modelPartitions.size();
-			for (Resource resource : models) {
-				// Check partitions
-				// FMDDD
-				// FMSSS
-				// FMSSD | FMSDD
-				// DDDDD
-				// SSSSS
-				// Add the fitness value of the ant if any new partition is met
+		List<String> alreadyVisitedEObjects = new ArrayList<String>();
+		for (Resource resource : models) {
+			for (Iterator<EObject> it = resource.getAllContents(); it.hasNext();) {
+				EObject eObject = (EObject) it.next();
+				if (eObject instanceof EClass) {
+					EClass eClass = (EClass) eObject;
+					if (!eClass.isAbstract() && !eClass.isInterface()) {
+						for (Iterator<EObject> itMM = this.metaModel.getAllContents(); itMM.hasNext();) {
+							EObject eObjectMM = (EObject) itMM.next();
+							if (eObjectMM instanceof EClass) {
+								EClass eClassMM = (EClass) eObjectMM;
+								if (!eClassMM.isAbstract() && !eClassMM.isInterface()
+										&& eClassMM.getName().equals(eClass.getName())
+										&& !alreadyVisitedEObjects.contains(eClass.getName())) {
+									mmCoverage++;
+									alreadyVisitedEObjects.add(eClass.getName());
+								}
+							}
+						}
+					}
+				}
 			}
 		}
+
 		return mmCoverage;
+//		if (IsAnyPartitionConstraintsIsDefined()) // TODO Check if any constraint is defined in attributes/references
+//		{
+//
+//		} else {
+//			mmCoverage = modelPartitions.size();
+//			for (Resource resource : models) {
+//				// Check partitions
+//				// FMDDD
+//				// FMSSS
+//				// FMSSD | FMSDD
+//				// DDDDD
+//				// SSSSS
+//				// Add the fitness value of the ant if any new partition is met
+//			}
+//		}
+
 	}
 
 	private boolean IsAnyPartitionConstraintsIsDefined() {
@@ -334,9 +472,47 @@ public class Ant {
 		return false;
 	}
 
-	private int CalulateObjective2() {
-		// TODO Objective 2 of current ant in this problem
-		return 0;
+	private int CalulateDissimilarity() {
+		// return 1;
+
+		int distance = 0;
+		int arr[][] = new int[getNumberOfUserNeedModels()][];
+
+		for (int i = 0; i <= getNumberOfUserNeedModels() - 1; i++) {
+			arr[i] = new int[getNumberOfUserNeedModels() - i];
+		}
+		// Initializing array
+		// int count = 0;
+		for (int i = 0; i < arr.length - 1; i++)
+			for (int j = 0; j < arr[i].length; j++)
+				arr[i][j] = CalculateDistanceBetweenModels((Resource) models.toArray()[i],
+						(Resource) models.toArray()[j]);
+
+		for (int i = 0; i < arr.length - 1; i++) {
+			for (int j = 0; j < arr[i].length; j++)
+				distance += arr[i][j];
+		}
+		return distance;
+	}
+
+	private int CalculateDistanceBetweenModels(Resource leftResource, Resource rightResource) {
+		int similarity = 0;
+		int objectCount = 0;
+
+		TreeIterator<EObject> leftAllContents = leftResource.getAllContents();
+		TreeIterator<EObject> rightAllContents = rightResource.getAllContents();
+
+		while (leftAllContents.hasNext()) {
+			objectCount++;
+			EObject leftObject = leftAllContents.next();
+			while (rightAllContents.hasNext()) {
+				EObject righttObject = rightAllContents.next();
+				if (leftObject.eClass().getName() == righttObject.eClass().getName())
+					similarity++;
+			}
+		}
+
+		return objectCount - similarity; // Distance
 	}
 
 	public ImmutableSet<EClass> possibleRootEClasses() {
@@ -413,7 +589,7 @@ public class Ant {
 			// Math.floor(numberOfMetaModelElements / 2), numberOfMetaModelElements);
 			distribution = new UniformIntegerDistribution(1, 100);
 			distribution.reseedRandomGenerator(random.nextLong());
-			//distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
+			// distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
 			distributions.put(this.metaModel, distribution);
 		}
 		return distribution;
@@ -425,7 +601,7 @@ public class Ant {
 			distribution = new UniformIntegerDistribution(0, rootEClasses.size() - 1);
 			// distribution = new UniformIntegerDistribution(1, 100);
 			distribution.reseedRandomGenerator(random.nextLong());
-			//distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
+			// distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
 			distributions.put(rootEClasses, distribution);
 		}
 
@@ -439,7 +615,7 @@ public class Ant {
 			// 1);
 			distribution = new UniformIntegerDistribution(1, eClass.getEAllContainments().size());
 			distribution.reseedRandomGenerator(random.nextLong());
-			//distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
+			// distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
 			distributions.put(eClass, distribution);
 		}
 		return distribution;
@@ -447,7 +623,7 @@ public class Ant {
 
 	protected Optional<EObject> generateEObject(EClass eClass, ListMultimap<EClass, EObject> indexByKind) {
 		final EObject eObject;
-		currentObjects++;
+		// currentObjects++;
 		// LOGGER.fine(MessageFormat.format("Generating EObject {0} / ~{1}
 		// (EClass={2})",
 		// currentObjects, goalObjects, eClass.getName()));
@@ -464,7 +640,7 @@ public class Ant {
 		for (EClass eSuperType : eClass.getEAllSuperTypes()) {
 			indexByKind.put(eSuperType, eObject);
 		}
-
+		currentObjects++;
 		return eObject;
 	}
 
@@ -495,7 +671,7 @@ public class Ant {
 	protected void generateSingleAttribute(EObject eObject, EAttribute eAttribute, IntegerDistribution distribution,
 			Class<?> instanceClass) {
 		if (eAttribute.isRequired() || booleanInDistribution(distribution)) {
-			final Object value;
+			Object value;
 			EDataType eAttributeType = eAttribute.getEAttributeType();
 			if (attributePartitioning == null)
 				attributePartitioning = new HashMap<EAttribute, SortedSet<String>>();
@@ -519,12 +695,27 @@ public class Ant {
 					value = 0;
 				}
 				attributePartitioning.get(eAttribute).add(value.toString());
+			} else if (eAttributeType instanceof Date) {
+				instanceClass = Date.class;
+				eAttributeType.setInstanceClass(Date.class);
+				GregorianCalendar gc = new GregorianCalendar();
+
+				int year = 2000 + (int) Math.round(Math.random() * (20));
+				gc.set(gc.YEAR, year);
+				int dayOfYear = 1 + (int) Math.round(Math.random() * (gc.getActualMaximum(gc.DAY_OF_YEAR) - 1));
+				gc.set(gc.DAY_OF_YEAR, dayOfYear);
+				value = gc.get(gc.YEAR) + "-" + (gc.get(gc.MONTH) + 1) + "-" + gc.get(gc.DAY_OF_MONTH);
 			} else {
 				if (instanceClass == null) {
 					instanceClass = String.class; // EDataType.class
 					eAttributeType.setInstanceClass(String.class);
 				}
+
 				value = nextValue(instanceClass);
+//				if (eAttributeType instanceof EDataType) {
+//					instanceClass = Date.class;
+//					eAttributeType.setInstanceClass(Date.class);
+//				}
 				if (value == null)
 					return;
 				if (!attributePartitioning.containsKey(eAttribute)) {
@@ -532,7 +723,17 @@ public class Ant {
 				}
 				attributePartitioning.get(eAttribute).add(value.toString());
 			}
+			try
+			{				
 			eObject.eSet(eAttribute, value);
+			}
+			catch(Exception ex)
+			{
+				if (eAttributeType instanceof EEnum) {
+					value = 1;
+					eObject.eSet(eAttribute, value);
+				}								
+			}
 		}
 	}
 
@@ -591,7 +792,7 @@ public class Ant {
 	protected void generateEContainmentReferences(EObject eObject, EClass eClass,
 			ListMultimap<EClass, EObject> indexByKind) {
 		EReference lastEReference = null;
-		if (eClass.getEAllContainments().size() > 0)
+		if (eClass.getEAllContainments().size() > 0) {
 			for (EReference eReference : ePackagesData.eAllContainment(eClass)) {
 				// for (EReference eReference : eClass.getEAllContainments()) {
 				// if (eReference.isRequired() || (currentObjects < goalObjects && currentDepth
@@ -604,15 +805,29 @@ public class Ant {
 				}
 				// break;
 			}
-		if (numberofCreatedModelElementss < numberOfUserNeedElements && lastEReference != null) {
-			generateEContainmentReference(eObject, lastEReference, indexByKind,
-					numberOfUserNeedElements - numberofCreatedModelElementss);
+		} else if (eClass.getEAllReferences().size() > 0) {
+//			for (EReference eReference : eClass.getEAllReferences()) {
+//				if ((numberofCreatedModelElementss < goalObjects && currentDepth <= currentMaxDepth)) {
+//					if (eReference.getEOpposite() != null) {
+//						generateEContainmentReference(eObject, eReference, indexByKind, 0);
+//						lastEReference = eReference;
+//					}
+//				}
+//				// break;
+//			}
 		}
+
+//		if (numberofCreatedModelElementss < numberOfUserNeedElements && lastEReference != null) {
+//			generateEContainmentReference(eObject, lastEReference, indexByKind,
+//					numberOfUserNeedElements - numberofCreatedModelElementss);
+//		}
 
 	}
 
-	protected void generateCrossReferences(EObject eObject, ListMultimap<EClass, EObject> indexByKind) {
+	protected void generateCrossReferences(EObject eObject, ListMultimap<EClass, EObject> indexByKind,
+			List<EObject> VisitedReferences) {
 		Iterable<EReference> eAllNonContainment = ePackagesData.eAllNonContainment(eObject.eClass());
+
 		for (EReference eReference : eAllNonContainment) {
 			EClass eReferenceType = eReference.getEReferenceType();
 			IntegerDistribution distribution = getDistributionFor(eReference);
@@ -626,7 +841,8 @@ public class Ant {
 				for (int i = 0; i < sample; i++) {
 					List<EObject> possibleValues = indexByKind.get(eReferenceType);
 					if (!possibleValues.isEmpty()) {
-						final EObject nextEObject = possibleValues.get(nextInt(possibleValues.size()));
+						int tt = nextInt(possibleValues.size());
+						final EObject nextEObject = possibleValues.get(tt);
 						values.add(nextEObject);
 					}
 				}
@@ -636,8 +852,54 @@ public class Ant {
 					// {1}", eReference.getName(), eObject.toString()));
 					List<EObject> possibleValues = indexByKind.get(eReferenceType);
 					if (!possibleValues.isEmpty()) {
-						final EObject nextEObject = possibleValues.get(nextInt(possibleValues.size()));
-						eObject.eSet(eReference, nextEObject);
+
+//						int tt = nextInt(possibleValues.size());
+//						final EObject nextEObject = possibleValues.get(tt);
+//						eObject.eSet(eReference, nextEObject);
+
+						int tt = 0;
+						EObject nextEObject;
+						// if (VisitedReferences.containsAll(possibleValues)) // All possibles are met,
+						// for this point
+						// it would be duplicate, Take one by
+						// random
+						if (possibleValues.size() == 0 && !VisitedReferences.isEmpty()) {
+							// tt = nextInt(possibleValues.size());
+							Random random = new Random();
+							tt = random.nextInt(VisitedReferences.size() - 1);
+							nextEObject = VisitedReferences.get(tt);
+							eObject.eSet(eReference, nextEObject);
+						} else {
+							// do {
+							// tt = nextInt(possibleValues.size());
+							// Intersect and pick
+							EObject temp = possibleValues.get(0);
+							if (!VisitedReferences.isEmpty())
+							// VisitedReferences.retainAll(possibleValues);
+							{
+								for (EObject e : VisitedReferences) {
+									if (possibleValues.contains(e))
+										possibleValues.remove(e);
+								}
+							}
+							Random random = new Random();
+							if (possibleValues.isEmpty() || possibleValues.size() == 0) {
+								nextEObject = temp;
+							} else {
+								if (possibleValues.size() == 1)
+									nextEObject = possibleValues.get(0);
+								else {
+									tt = random.nextInt(possibleValues.size() - 1);
+									nextEObject = possibleValues.get(tt);
+								}
+							}
+							if (!VisitedReferences.contains(nextEObject)) {
+								VisitedReferences.add(nextEObject);
+								// break;
+							}
+							// } while (true);
+							eObject.eSet(eReference, nextEObject);
+						}
 					}
 				}
 			}
@@ -653,7 +915,7 @@ public class Ant {
 					Math.max(Math.min(propertiesRange.getMinimum(), upperBound), eAttribute.getLowerBound()),
 					Math.min(propertiesRange.getMaximum(), upperBound));
 			distribution.reseedRandomGenerator(random.nextLong());
-			//distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
+			// distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
 			distributions.put(eAttribute, distribution);
 		}
 		return distribution;
@@ -706,8 +968,25 @@ public class Ant {
 
 	protected Object nextObject(Class<?> instanceClass) {
 		if (instanceClass == String.class) {// EDataType.class) {
-			return RandomStringUtils.random(getValueDistributionFor(instanceClass).sample(), 0, 0, true, true, null,
-					new Random(seed));
+//			return RandomStringUtils.random(getValueDistributionFor(instanceClass).sample(), 0, 0, true, true, null,
+//					new Random(seed));
+			String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789" + "abcdefghijklmnopqrstuvxyz";
+
+			int n = 20;
+			StringBuilder sb = new StringBuilder(n);
+
+			for (int i = 0; i < n; i++) {
+
+				// generate a random number between
+				// 0 to AlphaNumericString variable length
+				int index = (int) (AlphaNumericString.length() * Math.random());
+
+				// add Character one by one in end of sb
+				sb.append(AlphaNumericString.charAt(index));
+			}
+
+			return sb.toString();
+
 		} else {
 //			LOGGER.warning(
 //					MessageFormat.format("Do not know how to randomly generate ''{0}'' object",
@@ -824,10 +1103,35 @@ public class Ant {
 					Math.min(referencesRange.getMaximum(), upperBound));
 
 			distribution.reseedRandomGenerator(random.nextLong());
-			//distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
+			// distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
 			distributions.put(eReference, distribution);
 		}
 		return distribution;
+	}
+
+	public int RolleteWheelSelection(HashMap<String, Double> p_bound) {
+
+		if (p_bound == null)
+			return 1;
+
+		double rangeMin = 0.0f;
+		double rangeMax = 1f; // normalized Probability here
+		Random r = new Random();
+		double createdRanNum = rangeMin + (rangeMax - rangeMin) * r.nextDouble();
+
+		List<Double> accomulativeArray = new ArrayList<Double>(p_bound.size());
+		int c = 0;
+		for (String b : p_bound.keySet()) { // tau[b]
+			accomulativeArray.add((c + p_bound.get(b)) / 100);
+			c += p_bound.get(b);
+		}
+
+		int returnIndex;
+		for (returnIndex = 0; returnIndex < accomulativeArray.size() - 1; returnIndex++) {
+			if (createdRanNum <= accomulativeArray.get(returnIndex))
+				break;
+		}
+		return returnIndex + 1;
 	}
 
 	public int RolleteWheelSelection(EReference eReference) {
@@ -840,7 +1144,7 @@ public class Ant {
 					Math.min(referencesRange.getMaximum(), upperBound));
 
 			distribution.reseedRandomGenerator(random.nextLong());
-			//distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
+			// distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
 			distributions.put(eReference, distribution);
 		}
 
@@ -859,7 +1163,7 @@ public class Ant {
 		if (distribution == null) {
 			distribution = new UniformIntegerDistribution(valuesRange.getMinimum(), valuesRange.getMaximum());
 			distribution.reseedRandomGenerator(random.nextLong());
-			//distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
+			// distribution.reseedRandomGenerator(RoletteWheelSelection(probabilityArray));
 			distributions.put(clazz, distribution);
 		}
 		return distribution;
@@ -867,12 +1171,37 @@ public class Ant {
 
 	void generateManyContainmentReference(EObject eObject, EReference eReference,
 			ListMultimap<EClass, EObject> indexByKind, ImmutableMultiset<EClass> eAllConcreteSubTypesOrSelf,
-			int remainElementSize) {			
+			int remainElementSize) {
 		IntegerDistribution distribution = getDistributionFor(eReference);
 //			@SuppressWarnings("unchecked")
+		// inja meysam
+
+		if (probabilityArray.get(eReference.getName()) == null) {
+			HashMap<String, Double> val = new HashMap<String, Double>();
+			val.put("LowerBoundProbability", 100 / (double) 3);
+			val.put("UpperBoundProbability", 100 / (double) 3);
+			val.put("MiddleBoundProbability", 100 / (double) 3);
+
+			probabilityArray.put(eReference.getName(), val);
+		}
+
+		int select = RolleteWheelSelection(probabilityArray.get(eReference.getName()));
+
+		int sample = 0;
+		switch (select) {
+		case 1:
+			sample = distribution.sample();
+			break;
+		case 2:
+			sample = eReference.getLowerBound();
+			break;
+		case 3:
+			sample = (eReference.getUpperBound() == -1) ? 5 : eReference.getUpperBound();
+			break;
+		}
+		// ta inja meysam
 		List<EObject> values = (List<EObject>) eObject.eGet(eReference);
-		int sample = distribution.sample();
-		//sample = RolleteWheelSelection(eReference);		
+		// int sample = distribution.sample();
 		if (sample > (getNumberOfUserNeedElements() - numberofCreatedModelElementss)) {
 			if (remainElementSize > 0) {
 				sample = remainElementSize;
@@ -885,7 +1214,7 @@ public class Ant {
 		}
 //			LOGGER.fine(MessageFormat.format("Generating {0} values for EReference ''{1}'' in EObject {2}", sample, eReference.getName(), eObject.toString()));
 		numberofCreatedModelElementss += sample;
-		if(numberofCreatedModelElementss > getNumberOfUserNeedElements())
+		if (numberofCreatedModelElementss > getNumberOfUserNeedElements())
 			return;
 		for (int i = 0; i < sample; i++) {
 			int idx = nextInt(eAllConcreteSubTypesOrSelf.size());
@@ -894,7 +1223,9 @@ public class Ant {
 			if (nextEObject.isPresent()) {
 				values.add(nextEObject.get());
 			}
-		}				
+		}
+		System.out.println("Meii first many " + Thread.currentThread().getName() + " " + Thread.activeCount() + " "
+				+ currentModelPartition);
 
 		for (int i = 0; i < sample; i++) {
 			if (currentModelPartition == "")
@@ -902,6 +1233,9 @@ public class Ant {
 			else
 				currentModelPartition += "," + eReference.getName();
 		}
+
+		System.out.println("Meii next many " + Thread.currentThread().getName() + " " + Thread.activeCount() + " "
+				+ currentModelPartition);
 
 	}
 
@@ -917,7 +1251,8 @@ public class Ant {
 				eObject.eSet(eReference, nextEObject.get());
 			}
 			numberofCreatedModelElementss++;
-			
+			System.out.println("Meii single " + Thread.currentThread().getName() + " " + Thread.activeCount() + " "
+					+ currentModelPartition);
 			if (currentModelPartition == "") {
 				currentModelPartition += eReference.getName();
 			} else {
@@ -952,7 +1287,7 @@ public class Ant {
 		return ImmutableSet.copyOf(eClasses);
 	}
 
-	public int  RoletteWheelSelection(double[] c) {
+	public int RoletteWheelSelection(double[] c) {
 		double rangeMin = 0.0f;
 		double rangeMax = c[c.length - 1];
 		Random r = new Random();

@@ -100,11 +100,13 @@ public class Problem {
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 		
 //		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/Grafcet.ecore"), true);
-//		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/Families.ecore"), true);
-//		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/HSM.ecore"), true);
+		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/Families.ecore"), true);
+//		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/hsm.ecore"), true);
+//		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/Tutorial.ecore"), true);		
 //		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/CPL.ecore"), true);
-		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/petrinet.ecore"), true);
+//		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/petrinet.ecore"), true);
 //		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/BibTeX.ecore"), true);
+//		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/GraphML.ecore"), true);		
 //		Resource myMetaModel = resourceSet.getResource(URI.createFileURI("inputs/pnml.ecore"), true);
 		
 //		
